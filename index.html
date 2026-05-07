@@ -1,0 +1,1153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scrolis — Scroll less, see more.</title>
+  <meta name="description" content="A daily news digest built from your timeline — balanced, finite, and free from the algorithm.">
+  <link rel="icon" type="image/png" href="RibbonSwirl.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;1,400&family=Inter:wght@400;500;600;700&family=Figtree:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    /* ── RESET ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: #F7F5F0;
+      color: #1C1B2E;
+      font-family: 'Figtree', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      font-size: 16px;
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* ── TOKENS ── */
+    :root {
+      --bg:      #F7F5F0;
+      --primary: #5147C4;
+      --accent:  #B8745E;
+      --text:    #1C1B2E;
+      --muted:   #7A7888;
+      --panel:   #EDE8DF;
+      --warm:    #E3D4C0;
+      --border:  #DDD8CF;
+    }
+
+    /* ── TYPE ── */
+    h1, h2 {
+      font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
+      font-weight: 400;
+      line-height: 1.1;
+      letter-spacing: -0.03em;
+    }
+
+    /* ── SCROLL REVEAL ── */
+    .reveal {
+      opacity: 0;
+      transform: translateY(22px);
+      transition: opacity 0.95s ease-out, transform 0.95s ease-out;
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: none;
+    }
+
+    /* ════════════════════════════════
+       NAV
+    ════════════════════════════════ */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 52px;
+      background: transparent;
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+      transition: background 0.5s ease, backdrop-filter 0.5s ease,
+                  -webkit-backdrop-filter 0.5s ease, box-shadow 0.4s ease;
+    }
+    nav.scrolled {
+      background: rgba(247, 245, 240, 0.92);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      box-shadow: 0 1px 0 var(--border);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      text-decoration: none;
+      color: var(--text);
+    }
+    .logo img { width: 26px; height: 26px; }
+    .logo-name {
+      font-family: 'Inter', sans-serif;
+      font-size: 21px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 40px;
+      list-style: none;
+    }
+    .nav-links a {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--muted);
+      text-decoration: none;
+      letter-spacing: 0.01em;
+      transition: color 0.2s ease;
+    }
+    .nav-links a:hover { color: var(--text); }
+
+    .btn-primary {
+      font-family: 'Figtree', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      color: #fff;
+      background: var(--primary);
+      border: none;
+      border-radius: 100px;
+      padding: 10px 22px;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+      letter-spacing: 0.01em;
+      transition: background 0.25s ease, transform 0.2s ease;
+    }
+    .btn-primary:hover { background: #3d37ae; transform: translateY(-1px); }
+
+    /* ════════════════════════════════
+       HERO
+    ════════════════════════════════ */
+    .hero {
+      position: relative;
+      padding: 150px 52px 88px;
+    }
+
+    /* Signature effect — one slow-breathing blob, nowhere else */
+    .hero-blob {
+      position: absolute;
+      top: -100px;
+      right: 0px;
+      width: 800px;
+      height: 800px;
+      border-radius: 50%;
+      background: radial-gradient(
+        ellipse at 38% 42%,
+        rgba(81, 71, 196, 0.13) 0%,
+        rgba(184, 116, 94, 0.09) 44%,
+        transparent 68%
+      );
+      filter: blur(80px);
+      pointer-events: none;
+      will-change: transform;
+      animation: breathe 22s ease-in-out infinite;
+    }
+    @keyframes breathe {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      28%       { transform: translate(-50px, 38px) scale(1.07); }
+      62%       { transform: translate(30px, -28px) scale(0.94); }
+    }
+
+    .hero-inner {
+      position: relative;
+      z-index: 2;
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 620px;
+      gap: 72px;
+      align-items: center;
+    }
+
+    .hero-eyebrow {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.13em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 26px;
+    }
+    .hero-title {
+      font-size: clamp(52px, 6.5vw, 82px);
+      color: var(--text);
+      margin-bottom: 28px;
+    }
+    .hero-title em {
+      font-style: italic;
+      color: var(--primary);
+    }
+    .hero-desc {
+      font-size: 18px;
+      color: var(--muted);
+      line-height: 1.72;
+      max-width: 430px;
+      margin-bottom: 28px;
+      font-weight: 400;
+    }
+    .hero-pills {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .pill {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--muted);
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      padding: 5px 13px;
+      letter-spacing: 0.01em;
+    }
+    /* Phone frame */
+    .phone-wrap {
+      position: relative;
+      overflow: visible;
+      /* Parallax: JS writes --parallax (px value) on :root each scroll frame */
+      transform: translateY(calc(var(--parallax, 0) * 1px));
+      will-change: transform;
+    }
+    .phone-wrap img {
+      display: block;
+      max-width: 100%;
+      height: auto;
+    }
+
+    /* ── SOCIAL FEED CARDS ── */
+    .sc-card {
+      position: absolute;
+      background: #fff;
+      border-radius: 14px;
+      padding: 11px 13px;
+      box-shadow:
+        0 8px 28px rgba(28, 27, 46, 0.10),
+        0 2px 6px  rgba(28, 27, 46, 0.06);
+      width: 152px;
+      pointer-events: none;
+      user-select: none;
+      z-index: 10;
+    }
+    .sc-top {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 9px;
+    }
+    .sc-avatar {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .sc-meta { flex: 1; display: flex; flex-direction: column; gap: 5px; }
+    .sc-bar {
+      height: 7px;
+      border-radius: 4px;
+      background: #E8E6E1;
+    }
+    .sc-img {
+      width: 100%;
+      height: 58px;
+      border-radius: 8px;
+      margin-top: 9px;
+    }
+
+    /* Positions + animations in one rule per card to avoid cascade conflicts */
+    .sc-card--x  {
+      top: 18%; left: -112px;
+      animation: scFlyR 5.6s ease-in-out 0s   infinite backwards;
+    }
+    .sc-card--ig {
+      bottom: 18%; left: -112px;
+      animation: scFlyR 5.6s ease-in-out 1.9s infinite backwards;
+    }
+    .sc-card--th {
+      top: 18%; right: -112px;
+      animation: scFlyL 5.6s ease-in-out 1.0s infinite backwards;
+    }
+    .sc-card--tt {
+      bottom: 18%; right: -112px;
+      animation: scFlyL 5.6s ease-in-out 2.8s infinite backwards;
+    }
+
+    /* scFlyR — flies toward the right (left-side cards going into phone) */
+    @keyframes scFlyR {
+      0%    { transform: translate(0, 0) scale(1); opacity: 0; }
+      22%   { transform: translate(0, 0) scale(1); opacity: 1; }
+      60%   { transform: translate(0, 0) scale(1); opacity: 1;
+              animation-timing-function: cubic-bezier(0.4, 0, 1, 1); }
+      80%   { transform: translate(180px, 0) scale(0.06); opacity: 0; }
+      80.1% { transform: translate(0, 0) scale(1); opacity: 0; }
+      100%  { transform: translate(0, 0) scale(1); opacity: 0; }
+    }
+    /* scFlyL — flies toward the left (right-side cards going into phone) */
+    @keyframes scFlyL {
+      0%    { transform: translate(0, 0) scale(1); opacity: 0; }
+      22%   { transform: translate(0, 0) scale(1); opacity: 1; }
+      60%   { transform: translate(0, 0) scale(1); opacity: 1;
+              animation-timing-function: cubic-bezier(0.4, 0, 1, 1); }
+      80%   { transform: translate(-180px, 0) scale(0.06); opacity: 0; }
+      80.1% { transform: translate(0, 0) scale(1); opacity: 0; }
+      100%  { transform: translate(0, 0) scale(1); opacity: 0; }
+    }
+
+    /* Curvy arrows */
+    .sc-arrow {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 64px;
+      height: 32px;
+      overflow: visible;
+    }
+    .sc-arrow--r { left:  calc(100% + 4px); }
+    .sc-arrow--l { right: calc(100% + 4px); }
+    .sc-arrow .arrow-line { stroke-dasharray: 5 4; animation: arrowDash 0.8s linear infinite; }
+    @keyframes arrowDash { to { stroke-dashoffset: -18; } }
+    .phone-shell {
+      width: 100%;
+      max-width: 280px;
+      background: transparent;
+      border-radius: 0;
+      padding: 0;
+      box-shadow: 0 40px 80px rgba(28, 27, 46, 0.15);
+      will-change: transform;
+    }
+    .phone-screen {
+      border-radius: 0;
+      overflow: hidden;
+      background: transparent
+    }
+    .phone-screen img {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    /* ════════════════════════════════
+       HOW IT WORKS
+    ════════════════════════════════ */
+    .how {
+      padding: 116px 52px 120px;
+    }
+    .how-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .section-label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.13em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 16px;
+    }
+    .section-heading {
+      font-size: clamp(34px, 4vw, 50px);
+      color: var(--text);
+      margin-bottom: 72px;
+      max-width: 500px;
+    }
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+    .step {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 36px 32px 40px;
+      box-shadow: 0 1px 3px rgba(28, 27, 46, 0.04), 0 4px 12px rgba(28, 27, 46, 0.03);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      cursor: default;
+    }
+    .step:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 4px 16px rgba(28, 27, 46, 0.09), 0 16px 40px rgba(28, 27, 46, 0.06);
+    }
+    .step-num {
+      font-family: 'Playfair Display', serif;
+      font-size: 56px;
+      color: var(--border);
+      line-height: 1;
+      margin-bottom: 20px;
+      letter-spacing: -0.04em;
+    }
+    .step-title {
+      font-size: 19px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 12px;
+    }
+    .step-body {
+      font-size: 16px;
+      color: var(--muted);
+      line-height: 1.78;
+    }
+
+    /* ════════════════════════════════
+       CALM — full bleed
+    ════════════════════════════════ */
+    .calm {
+      background: var(--warm);
+      padding: 120px 52px;
+    }
+    .calm-inner {
+      max-width: 680px;
+      margin: 0 auto;
+      text-align: center;
+    }
+    .calm-statement {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(34px, 5vw, 58px);
+      color: var(--text);
+      letter-spacing: -0.03em;
+      line-height: 1.22;
+      margin-bottom: 26px;
+    }
+    .calm-statement em {
+      font-style: italic;
+      color: var(--primary);
+    }
+    .calm-body {
+      font-size: 17px;
+      color: #7A7060;
+      line-height: 1.78;
+      margin-bottom: 18px;
+    }
+    .calm-source {
+      font-size: 12px;
+      color: #9E9080;
+      font-style: italic;
+    }
+
+    /* ════════════════════════════════
+       FEATURES — editorial row layout
+       (no cards; intentional choice)
+    ════════════════════════════════ */
+    .features { padding: 128px 52px; }
+    .features-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      column-gap: 80px;
+      align-items: start;
+    }
+    .features-header {
+      grid-column: 1 / -1;
+      text-align: center;
+      margin-bottom: 72px;
+    }
+    .features-header .section-heading {
+      text-align: center;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    /* Sticky phone column */
+    .features-phone-col {
+      position: sticky;
+      top: calc(50vh - 320px);
+      align-self: start;
+      display: flex;
+      justify-content: center;
+    }
+    .feat-phone-shell {
+      width: 310px;
+      background: #19182A;
+      border-radius: 50px;
+      padding: 11px;
+      box-shadow:
+        0 52px 100px rgba(28, 27, 46, 0.22),
+        0 12px 32px rgba(28, 27, 46, 0.10),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+    }
+    .feat-phone-screen {
+      border-radius: 40px;
+      overflow: hidden;
+      background: #F2F0EB;
+      position: relative;
+    }
+    .feat-img {
+      display: block;
+      width: 100%;
+      height: auto;
+      transition: opacity 0.35s ease;
+    }
+    .feat-img + .feat-img {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .feat-img:not(.active) { opacity: 0; }
+
+    /* Feature item hover highlight */
+    .feature-item[data-feat-key] { cursor: default; }
+    .feature-item[data-feat-key]:hover {
+      background: rgba(81, 71, 196, 0.04);
+      border-radius: 12px;
+      padding-left: 12px;
+      padding-right: 12px;
+      margin-left: -12px;
+      margin-right: -12px;
+    }
+
+    .feature-list { border-top: 1.5px solid var(--border); }
+
+    .feature-item {
+      display: grid;
+      grid-template-columns: 72px 1fr 1fr;
+      gap: 0 56px;
+      align-items: start;
+      padding: 52px 0;
+      border-bottom: 1.5px solid var(--border);
+    }
+    .feature-n {
+      font-family: 'Playfair Display', serif;
+      font-size: 13px;
+      color: var(--muted);
+      padding-top: 8px;
+      opacity: 0.4;
+      letter-spacing: 0.04em;
+    }
+    .feature-h {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(26px, 2.8vw, 38px);
+      color: var(--text);
+      letter-spacing: -0.025em;
+      line-height: 1.2;
+    }
+    .feature-h em {
+      font-style: italic;
+      color: var(--primary);
+    }
+    .feature-d {
+      font-size: 15px;
+      color: var(--muted);
+      line-height: 1.82;
+      padding-top: 7px;
+    }
+
+    /* Feature 03 — the intentional grid break.
+       Different column structure + faint background = visual pause. */
+    .feature-item.break {
+      grid-template-columns: 72px 1fr;
+      grid-template-rows: auto auto;
+      border-bottom: 0;
+    }
+    .feature-item.break .feature-h {
+      grid-column: 2;
+      grid-row: 1;
+    }
+    .feature-item.break .feature-h em {
+      color: var(--text);
+    }
+    .feature-item.break .feature-d {
+      grid-column: 2;
+      grid-row: 2;
+      max-width: 540px;
+      margin-top: 18px;
+      padding-top: 0;
+    }
+    .feature-item.resume {
+      border-top: 1.5px solid var(--border);
+    }
+
+    /* ════════════════════════════════
+       DEMO
+    ════════════════════════════════ */
+    .demo { padding: 128px 52px; }
+    .demo-inner { max-width: 1200px; margin: 0 auto; }
+    .demo-header { margin-bottom: 52px; }
+
+    .demo-frame {
+      position: relative;
+      aspect-ratio: 16 / 9;
+      background: #19182A;
+      border-radius: 20px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    /* App screenshot fills the frame at low opacity — gives the placeholder
+       a sense of the product without feeling like a blank grey box */
+    .demo-bg {
+      position: absolute;
+      inset: 0;
+      background: url('final_first.png') center / cover no-repeat;
+      opacity: 0.09;
+      filter: blur(10px);
+      transform: scale(1.08); /* avoid blur edge bleed */
+    }
+    .demo-center {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      text-align: center;
+    }
+    .play-circle {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      border: 1.5px solid rgba(255, 255, 255, 0.22);
+      background: rgba(255, 255, 255, 0.06);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .play-circle svg { margin-left: 5px; }
+    .demo-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 22px;
+      color: rgba(255, 255, 255, 0.85);
+      letter-spacing: -0.02em;
+    }
+    .demo-soon {
+      font-size: 11px;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.28);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-top: -6px;
+    }
+
+    /* ════════════════════════════════
+       FOOTER
+    ════════════════════════════════ */
+    footer {
+      padding: 80px 52px;
+      border-top: 1px solid var(--border);
+    }
+    .footer-inner { max-width: 1200px; margin: 0 auto; }
+    .footer-top {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 80px;
+      padding-bottom: 56px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 40px;
+    }
+    .footer-tagline {
+      font-size: 14px;
+      color: var(--muted);
+      margin-top: 12px;
+      max-width: 290px;
+      line-height: 1.65;
+    }
+    .nl-heading { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+    .nl-sub     { font-size: 13px; color: var(--muted); margin-bottom: 20px; line-height: 1.55; }
+    .nl-row     { display: flex; gap: 8px; }
+    .nl-input {
+      flex: 1;
+      font-family: 'Figtree', sans-serif;
+      font-size: 14px;
+      padding: 11px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      background: white;
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.2s ease;
+    }
+    .nl-input:focus { border-color: var(--primary); }
+    .nl-input::placeholder { color: var(--muted); }
+    .nl-submit {
+      font-family: 'Figtree', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      padding: 11px 18px;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.2s ease;
+    }
+    .nl-submit:hover { background: #3d37ae; }
+    .footer-bottom {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .footer-copy { font-size: 13px; color: var(--muted); }
+    .footer-links { display: flex; gap: 28px; list-style: none; }
+    .footer-links a {
+      font-size: 13px;
+      color: var(--muted);
+      text-decoration: none;
+      transition: color 0.2s ease;
+    }
+    .footer-links a:hover { color: var(--text); }
+
+    /* ════════════════════════════════
+       RESPONSIVE
+    ════════════════════════════════ */
+    @media (max-width: 960px) {
+      nav { padding: 16px 24px; }
+      .nav-links { display: none; }
+
+      .hero { padding: 108px 24px 72px; }
+      .hero-inner { grid-template-columns: 1fr; gap: 52px; }
+      .phone-wrap { justify-content: flex-start; }
+      .phone-shell { max-width: 240px; }
+      .sc-card { display: none; }
+
+      .how { padding: 88px 24px; }
+      .steps { grid-template-columns: 1fr; gap: 16px; }
+
+      .calm { padding: 88px 24px; }
+
+      .features { padding: 96px 24px; }
+      .features-inner { display: block; }
+      .features-phone-col { display: none; }
+      .feature-item {
+        grid-template-columns: 52px 1fr;
+      }
+      .feature-item .feature-d {
+        grid-column: 1 / -1;
+        padding-top: 16px;
+      }
+      .feature-item.break {
+        padding: 44px 20px;
+        margin: 0 -16px;
+      }
+      .feature-item.break .feature-h { grid-column: 2; }
+      .feature-item.break .feature-d { grid-column: 1 / -1; margin-top: 14px; }
+
+      .demo { padding: 88px 24px; }
+
+      footer { padding: 60px 24px; }
+      .footer-top { grid-template-columns: 1fr; gap: 40px; }
+      .footer-bottom { flex-direction: column; gap: 24px; align-items: flex-start; }
+    }
+
+    @media (max-width: 480px) {
+      .hero-title { font-size: 44px; }
+      .section-heading { font-size: 30px; }
+      .calm-statement { font-size: 30px; }
+      .feature-item { padding: 40px 0; }
+      .feature-item.break { padding: 36px 16px; }
+    }
+
+    /* ── PROGRESS BAR ── */
+    #progress-bar {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%;
+      height: 2px;
+      background: var(--primary);
+      transform: scaleX(0);
+      transform-origin: left;
+      z-index: 200;
+      will-change: transform;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="progress-bar" aria-hidden="true"></div>
+
+  <!-- ── NAV ── -->
+  <nav id="main-nav">
+    <a href="#" class="logo">
+      <img src="RibbonSwirl.png" alt="Scrolis">
+      <span class="logo-name">Scrolis</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="#how-it-works">How it works</a></li>
+      <li><a href="#features">Features</a></li>
+      <li><a href="#demo">Demo</a></li>
+    </ul>
+    <a href="#demo" class="btn-primary">See the demo</a>
+  </nav>
+
+  <!-- ── HERO ── -->
+  <section class="hero">
+    <div class="hero-blob"></div>
+    <div class="hero-inner">
+
+      <div class="hero-left">
+        <p class="hero-eyebrow reveal">Daily digest · Perspective awareness</p>
+        <h1 class="hero-title reveal" style="transition-delay:.1s">
+          Scroll less, <em>see more.</em>
+        </h1>
+        <p class="hero-desc reveal" style="transition-delay:.2s">
+          A daily digest that shows you what your feed surfaces, and what it doesn't — balanced, finite, and free from the algorithm.
+        </p>
+        <div class="hero-pills reveal" style="transition-delay:.25s">
+          <span class="pill">Up to 5 stories per day</span>
+          <span class="pill">Different perspectives</span>
+          <span class="pill">No infinite scroll</span>
+        </div>
+      </div>
+
+      <div class="phone-wrap reveal" style="transition-delay:.38s">
+        <img src="final_first.png" alt="Scrolis app showing today's daily digest">
+
+        <!-- X / Twitter — left top, arrow curves upward toward phone -->
+        <div class="sc-card sc-card--x" aria-hidden="true">
+          <div class="sc-top">
+            <div class="sc-avatar" style="background:#000"></div>
+            <div class="sc-meta">
+              <div class="sc-bar" style="width:66px"></div>
+              <div class="sc-bar" style="width:46px;opacity:.4"></div>
+            </div>
+          </div>
+          <div class="sc-bar" style="width:100%;margin-bottom:5px"></div>
+          <div class="sc-bar" style="width:76%"></div>
+          <svg class="sc-arrow sc-arrow--r" viewBox="0 0 64 32" fill="none">
+            <path class="arrow-line" d="M 2,24 C 16,24 30,4 56,11" stroke="#5147C4" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M 49,7 L 57,11 L 50,16" stroke="#5147C4" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+
+        <!-- Instagram — left bottom, arrow curves downward toward phone -->
+        <div class="sc-card sc-card--ig" aria-hidden="true">
+          <div class="sc-top">
+            <div class="sc-avatar" style="background:linear-gradient(135deg,#f58529,#dd2a7b,#8134af)"></div>
+            <div class="sc-meta">
+              <div class="sc-bar" style="width:58px"></div>
+              <div class="sc-bar" style="width:42px;opacity:.4"></div>
+            </div>
+          </div>
+          <div class="sc-img" style="background:linear-gradient(135deg,#ede9e3,#d8d4cc)"></div>
+          <svg class="sc-arrow sc-arrow--r" viewBox="0 0 64 32" fill="none">
+            <path class="arrow-line" d="M 2,8 C 16,8 30,28 56,21" stroke="#5147C4" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M 49,16 L 57,21 L 50,26" stroke="#5147C4" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+
+        <!-- Threads — right top, arrow curves upward toward phone -->
+        <div class="sc-card sc-card--th" aria-hidden="true">
+          <div class="sc-top">
+            <div class="sc-avatar" style="background:#1c1c1e"></div>
+            <div class="sc-meta">
+              <div class="sc-bar" style="width:60px"></div>
+              <div class="sc-bar" style="width:44px;opacity:.4"></div>
+            </div>
+          </div>
+          <div class="sc-bar" style="width:100%;margin-bottom:5px"></div>
+          <div class="sc-bar" style="width:82%;margin-bottom:5px"></div>
+          <div class="sc-bar" style="width:58%"></div>
+          <svg class="sc-arrow sc-arrow--l" viewBox="0 0 64 32" fill="none">
+            <path class="arrow-line" d="M 62,24 C 48,24 34,4 8,11" stroke="#5147C4" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M 15,7 L 7,11 L 14,16" stroke="#5147C4" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+
+        <!-- TikTok — right bottom, arrow curves downward toward phone -->
+        <div class="sc-card sc-card--tt" aria-hidden="true">
+          <div class="sc-top">
+            <div class="sc-avatar" style="background:#EE1D52"></div>
+            <div class="sc-meta">
+              <div class="sc-bar" style="width:54px"></div>
+              <div class="sc-bar" style="width:40px;opacity:.4"></div>
+            </div>
+          </div>
+          <div class="sc-bar" style="width:100%;margin-bottom:5px"></div>
+          <div class="sc-bar" style="width:63%"></div>
+          <svg class="sc-arrow sc-arrow--l" viewBox="0 0 64 32" fill="none">
+            <path class="arrow-line" d="M 62,8 C 48,8 34,28 8,21" stroke="#5147C4" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M 15,16 L 7,21 L 14,26" stroke="#5147C4" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ── HOW IT WORKS ── -->
+  <section class="how" id="how-it-works">
+    <div class="how-inner">
+      <p class="section-label reveal">How it works</p>
+      <h2 class="section-heading reveal" style="transition-delay:.1s">
+        Not magic.<br>Just a better habit.
+      </h2>
+      <div class="steps" data-stagger>
+        <div class="step reveal">
+          <div class="step-num">01</div>
+          <h3 class="step-title">Connect your timeline.</h3>
+          <p class="step-body">Link your social accounts. Scrolis reads the posts of the people you follow — not a generic news feed — because your blind spots are specific to you, not the same as everyone else's.</p>
+        </div>
+        <div class="step reveal">
+          <div class="step-num">02</div>
+          <h3 class="step-title">We show you three views.</h3>
+          <p class="step-body">For every story: what your feed thinks, what the broader conversation looks like, and perspectives outside your usual circles that you'd never find on your own.</p>
+        </div>
+        <div class="step reveal">
+          <div class="step-num">03</div>
+          <h3 class="step-title">Read and explore.</h3>
+          <p class="step-body">A finite set of stories. When you've read them, there's nothing left to scroll. No algorithm reaching into the silence to pull you back in.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── CALM — full bleed ── -->
+<section class="calm">
+  <div class="calm-inner reveal">
+    <p class="section-label">Why we built it this way</p>
+    <p class="calm-statement">
+      Most people are reading their network's <em>reaction</em> to the news.
+    </p>
+    <p class="calm-body">
+      Not the news. Not every side of it. Just the slice an algorithm decided you'd respond to. Scrolis was built to fix that — quietly, and without judgment.
+    </p>
+  </div>
+</section>
+
+
+  <!-- ── FEATURES ── -->
+  <section class="features" id="features">
+    <div class="features-inner">
+
+      <!-- Full-width centered header -->
+      <div class="features-header">
+        <p class="section-label reveal">What makes it different</p>
+        <h2 class="section-heading reveal" style="transition-delay:.1s">
+          Built with a few<br>firm opinions.
+        </h2>
+      </div>
+
+      <!-- Sticky phone mockup -->
+      <div class="features-phone-col">
+        <div class="feat-phone-shell">
+          <div class="feat-phone-screen">
+            <img class="feat-img active" src="topic card - final1.png" data-feat-key="1" alt="Your Feed's Take">
+            <img class="feat-img" src="topic card - final2.png" data-feat-key="2" alt="Wandering">
+            <img class="feat-img" src="topic card - final3.png" data-feat-key="3" alt="Uncharted">
+            <img class="feat-img" src="profile v4.png" data-feat-key="4" alt="Your Perspective Profile">
+          </div>
+        </div>
+      </div>
+
+      <!-- Feature list -->
+      <div class="features-right">
+        <div class="feature-list">
+
+          <div class="feature-item reveal" data-feat-key="1">
+            <span class="feature-n">01</span>
+            <h3 class="feature-h">Your Feed's Take</h3>
+            <p class="feature-d">This is what your corner of the internet thinks. Straight from the accounts you already follow.</p>
+          </div>
+
+          <div class="feature-item reveal" data-feat-key="2">
+            <span class="feature-n">02</span>
+            <h3 class="feature-h">Wandering</h3>
+            <p class="feature-d">A slightly wider view with voices outside your usual orbit. Just the broader conversation, as it actually exists.</p>
+          </div>
+
+          <div class="feature-item reveal" data-feat-key="3">
+            <span class="feature-n">03</span>
+            <h3 class="feature-h"><em>Uncharted</em></h3>
+            <p class="feature-d">Perspectives that rarely reach you. Some might be uncomfortable, but the ones that make you stop and think? Those are worth the scroll.</p>
+          </div>
+
+          <div class="feature-item resume reveal" data-feat-key="4">
+            <span class="feature-n">04</span>
+            <h3 class="feature-h">Your Perspective Profile</h3>
+            <p class="feature-d">A breakdown of what you've been seeing and how diverse your information diet actually is. Not to judge — just to see. Most people are quietly surprised by what they find.</p>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ── DEMO ── -->
+  <section class="demo" id="demo">
+    <div class="demo-inner">
+      <div class="demo-header">
+        <p class="section-label reveal">Demo</p>
+        <h2 class="section-heading reveal" style="transition-delay:.1s">See it in action.</h2>
+      </div>
+      <div class="demo-frame reveal" style="transition-delay:.2s">
+        <div class="demo-bg" aria-hidden="true"></div>
+        <div class="demo-center">
+          <div class="play-circle">
+            <svg width="22" height="24" viewBox="0 0 22 24" fill="none" aria-hidden="true">
+              <path d="M2 2l18 10L2 22V2z" fill="rgba(255,255,255,0.88)"/>
+            </svg>
+          </div>
+          <p class="demo-title">Full walkthrough</p>
+          <p class="demo-soon">Video coming soon</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── FOOTER ── -->
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-top">
+        <div>
+          <a href="#" class="logo">
+            <img src="RibbonSwirl.png" alt="Scrolis">
+            <span class="logo-name">Scrolis</span>
+          </a>
+          <p class="footer-tagline">A daily digest that shows you what your feed surfaces, and what it doesn't. Balanced, finite, and free from the algorithm.</p>
+        </div>
+        <div>
+          <p class="nl-heading">Stay in the loop.</p>
+          <p class="nl-sub">Product updates and the occasional essay on why we built it this way.</p>
+          <form class="nl-row" onsubmit="return false;">
+            <input type="email" class="nl-input" placeholder="your@email.com">
+            <button type="submit" class="nl-submit">Subscribe</button>
+          </form>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p class="footer-copy">© 2026 Scrolis.</p>
+        <ul class="footer-links">
+          <li><a href="#">Privacy</a></li>
+          <li><a href="#">Terms</a></li>
+          <li><a href="#">Twitter / X</a></li>
+          <li><a href="#">Instagram</a></li>
+        </ul>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // ── SCROLL REVEAL ──
+    // Main observer for individual elements
+    const io = new IntersectionObserver(
+      entries => entries.forEach(e => {
+        if (e.isIntersecting) {
+          e.target.classList.add('visible');
+          io.unobserve(e.target);
+        }
+      }),
+      { threshold: 0.08, rootMargin: '0px 0px -28px 0px' }
+    );
+
+    // Stagger observer: watches [data-stagger] parents, fires children
+    // in sequence with 120ms gaps so they cascade rather than pop in together
+    const staggerObs = new IntersectionObserver(
+      entries => entries.forEach(e => {
+        if (!e.isIntersecting) return;
+        e.target.querySelectorAll('.reveal').forEach((child, i) => {
+          setTimeout(() => child.classList.add('visible'), i * 120);
+        });
+        staggerObs.unobserve(e.target);
+      }),
+      { threshold: 0.12 }
+    );
+
+    // Register stagger groups first, collect their children so the main
+    // observer doesn't fire on the same elements (would negate the stagger)
+    const staggerManaged = new Set();
+    document.querySelectorAll('[data-stagger]').forEach(group => {
+      staggerObs.observe(group);
+      group.querySelectorAll('.reveal').forEach(el => staggerManaged.add(el));
+    });
+
+    // Main observer — everything that isn't stagger-managed
+    document.querySelectorAll('.reveal').forEach(el => {
+      if (!staggerManaged.has(el)) io.observe(el);
+    });
+
+    // ── SCROLL-DRIVEN EFFECTS (single rAF loop) ──
+    const progressBar = document.getElementById('progress-bar');
+    const navEl       = document.getElementById('main-nav');
+    const phoneWrap   = document.querySelector('.phone-wrap');
+    const heroEl      = document.querySelector('.hero');
+
+    let rafPending = false;
+
+    function onScroll() {
+      if (rafPending) return;
+      rafPending = true;
+      requestAnimationFrame(() => {
+        const scrollY = window.scrollY;
+
+        // Sticky nav — transparent until 60px, then warm+blur
+        navEl.classList.toggle('scrolled', scrollY > 60);
+
+        // Progress bar — scaleX from 0 → 1 as page is consumed
+        const docH = document.documentElement.scrollHeight - window.innerHeight;
+        if (progressBar && docH > 0) {
+          progressBar.style.transform = `scaleX(${scrollY / docH})`;
+        }
+
+        // Parallax: phone moves at ~60% of page scroll speed.
+        // Achieved by translating it DOWN at 40% of scrollY, so the net
+        // upward movement in the viewport is 60% of the page scroll.
+        // Clamped to the hero height so it stops once hero is gone.
+        if (phoneWrap) {
+          const heroH    = heroEl ? heroEl.offsetHeight : 900;
+          const parallax = Math.min(scrollY, heroH) * 0.4;
+          document.documentElement.style.setProperty('--parallax', parallax);
+        }
+
+        rafPending = false;
+      });
+    }
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll(); // initialise on load
+
+    // ── FEATURES: image swap on hover ──
+    (function () {
+      const featImgs  = document.querySelectorAll('.feat-img');
+      const featItems = document.querySelectorAll('.feature-item[data-feat-key]');
+      if (!featImgs.length || !featItems.length) return;
+
+      function showImg(key) {
+        featImgs.forEach(img => img.classList.toggle('active', img.dataset.featKey === key));
+      }
+
+      featItems.forEach(item => {
+        item.addEventListener('mouseenter', () => showImg(item.dataset.featKey));
+        item.addEventListener('mouseleave', () => showImg('1')); // revert to default
+      });
+    })();
+
+    // ── 3D TILT on phone mockup ──
+    (function () {
+      const wrap  = document.querySelector('.phone-wrap');
+      const shell = wrap && wrap.querySelector('img');
+      if (!wrap || !shell) return;
+
+      const MAX_DEG = 11;
+
+      wrap.addEventListener('mousemove', e => {
+        const r  = wrap.getBoundingClientRect();
+        const nx = (e.clientX - r.left) / r.width  - 0.5;
+        const ny = (e.clientY - r.top)  / r.height - 0.5;
+
+        shell.style.transition = 'transform 0.15s ease-out';
+        shell.style.transform  =
+          `perspective(800px) rotateX(${-ny * MAX_DEG * 2}deg) rotateY(${nx * MAX_DEG * 2}deg)`;
+      });
+
+      wrap.addEventListener('mouseleave', () => {
+        shell.style.transition = 'transform 0.65s cubic-bezier(0.23, 1, 0.32, 1)';
+        shell.style.transform  = 'perspective(800px) rotateX(0deg) rotateY(0deg)';
+      });
+    })();
+  </script>
+
+</body>
+</html>
+
