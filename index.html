@@ -573,9 +573,16 @@
     .demo-inner { max-width: 1200px; margin: 0 auto; }
     .demo-header { margin-bottom: 52px; }
 
+    .demo-cols {
+      display: grid;
+      grid-template-columns: 2fr 3fr;
+      gap: 24px;
+      align-items: stretch;
+    }
+
     .demo-frame {
       position: relative;
-      aspect-ratio: 16 / 9;
+      aspect-ratio: 9 / 16;
       background: #19182A;
       border-radius: 20px;
       overflow: hidden;
@@ -626,6 +633,56 @@
       letter-spacing: 0.12em;
       text-transform: uppercase;
       margin-top: -6px;
+    }
+
+    .demo-right {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+    .report-card {
+      flex: 1;
+      background: #19182A;
+      border-radius: 20px;
+      border: 1.5px solid rgba(255, 255, 255, 0.07);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      text-align: center;
+      padding: 48px 32px;
+      text-decoration: none;
+      transition: border-color 0.25s, background 0.25s;
+    }
+    .report-card:hover {
+      border-color: rgba(255, 255, 255, 0.18);
+      background: #1f1e33;
+    }
+    .report-icon {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      border: 1.5px solid rgba(255, 255, 255, 0.22);
+      background: rgba(255, 255, 255, 0.06);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .report-arrow {
+      font-size: 11px;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.28);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-top: -6px;
+      transition: color 0.2s;
+    }
+    .report-card:hover .report-arrow { color: rgba(255, 255, 255, 0.55); }
+
+    @media (max-width: 680px) {
+      .demo-cols { grid-template-columns: 1fr; }
+      .demo-frame { aspect-ratio: 9 / 16; max-height: 520px; }
     }
 
     /* ════════════════════════════════
@@ -981,16 +1038,42 @@
         <p class="section-label reveal">Demo</p>
         <h2 class="section-heading reveal" style="transition-delay:.1s">See it in action.</h2>
       </div>
-      <div class="demo-frame reveal" style="transition-delay:.2s">
-        <div class="demo-bg" aria-hidden="true"></div>
-        <div class="demo-center">
-          <div class="play-circle">
-            <svg width="22" height="24" viewBox="0 0 22 24" fill="none" aria-hidden="true">
-              <path d="M2 2l18 10L2 22V2z" fill="rgba(255,255,255,0.88)"/>
-            </svg>
+      <div class="demo-cols reveal" style="transition-delay:.2s">
+        <div class="demo-frame">
+          <div class="demo-bg" aria-hidden="true"></div>
+          <div class="demo-center">
+            <div class="play-circle">
+              <svg width="22" height="24" viewBox="0 0 22 24" fill="none" aria-hidden="true">
+                <path d="M2 2l18 10L2 22V2z" fill="rgba(255,255,255,0.88)"/>
+              </svg>
+            </div>
+            <p class="demo-title">Full walkthrough</p>
+            <p class="demo-soon">Video coming soon</p>
           </div>
-          <p class="demo-title">Full walkthrough</p>
-          <p class="demo-soon">Video coming soon</p>
+        </div>
+        <div class="demo-right">
+          <a href="#report-link" class="report-card" target="_blank" rel="noopener">
+            <div class="report-icon">
+              <svg width="22" height="26" viewBox="0 0 24 28" fill="none" aria-hidden="true">
+                <path d="M4 2h10l6 6v18a2 2 0 01-2 2H4a2 2 0 01-2-2V4a2 2 0 012-2z" stroke="rgba(255,255,255,0.88)" stroke-width="1.5"/>
+                <path d="M14 2v6h6" stroke="rgba(255,255,255,0.88)" stroke-width="1.5"/>
+                <path d="M7 13h10M7 17h7" stroke="rgba(255,255,255,0.45)" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <p class="demo-title">Project Report</p>
+            <p class="report-arrow">Read the full write-up &rarr;</p>
+          </a>
+          <a href="#presentation-link" class="report-card" target="_blank" rel="noopener">
+            <div class="report-icon">
+              <svg width="26" height="22" viewBox="0 0 28 24" fill="none" aria-hidden="true">
+                <rect x="2" y="2" width="24" height="16" rx="2" stroke="rgba(255,255,255,0.88)" stroke-width="1.5"/>
+                <path d="M14 18v4M10 22h8" stroke="rgba(255,255,255,0.88)" stroke-width="1.5" stroke-linecap="round"/>
+                <path d="M8 9l4 3 4-4 4 3" stroke="rgba(255,255,255,0.45)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <p class="demo-title">Presentation</p>
+            <p class="report-arrow">View the slide deck &rarr;</p>
+          </a>
         </div>
       </div>
     </div>
